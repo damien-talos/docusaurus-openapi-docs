@@ -25,7 +25,8 @@
   "types": "src/plugin-openapi.d.ts",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "prepack": "cd ../.. && yarn build-packages"
   },
   "devDependencies": {
     "@docusaurus/types": ">=2.4.1 <=2.4.3",
