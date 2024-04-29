@@ -217,6 +217,13 @@ function primitive(schema: SchemaObject = {}) {
     return;
   }
 
+  if (schema.example) {
+    return schema.example;
+  }
+  if (schema.const) {
+    return schema.const;
+  }
+
   let fn = schema.default ? () => schema.default : primitives[type].default;
 
   if (format !== undefined) {
