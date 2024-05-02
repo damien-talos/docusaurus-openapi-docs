@@ -22,9 +22,15 @@ interface Props {
     description?: string;
     required?: string[] | boolean;
   };
+  depthTillCollapsed: number;
 }
 
-export function createRequestSchema({ title, body, ...rest }: Props) {
+export function createRequestSchema({
+  title,
+  body,
+  depthTillCollapsed,
+  ...rest
+}: Props) {
   if (
     body === undefined ||
     body.content === undefined ||
@@ -57,9 +63,9 @@ export function createRequestSchema({ title, body, ...rest }: Props) {
           children: [
             createDetails({
               className: "openapi-markdown__details mime",
-              "data-collapsed": false,
               open: true,
               ...rest,
+              "data-depthTillCollapsed": depthTillCollapsed,
               children: [
                 createDetailsSummary({
                   className: "openapi-markdown__details-summary-mime",
@@ -90,7 +96,11 @@ export function createRequestSchema({ title, body, ...rest }: Props) {
                 }),
                 create("ul", {
                   style: { marginLeft: "1rem" },
-                  children: createNodes(firstBody, "request"),
+                  children: createNodes(
+                    firstBody,
+                    "request",
+                    depthTillCollapsed - 1
+                  ),
                 }),
               ],
             }),
@@ -125,6 +135,7 @@ export function createRequestSchema({ title, body, ...rest }: Props) {
             className: "openapi-markdown__details mime",
             "data-collapsed": false,
             open: true,
+            "data-depthTillCollapsed": depthTillCollapsed,
             ...rest,
             children: [
               createDetailsSummary({
@@ -161,7 +172,12 @@ export function createRequestSchema({ title, body, ...rest }: Props) {
               }),
               create("ul", {
                 style: { marginLeft: "1rem" },
-                children: createNodes(firstBody, "request"),
+                "data-depthTillCollapsed": depthTillCollapsed,
+                children: createNodes(
+                  firstBody,
+                  "request",
+                  depthTillCollapsed - 1
+                ),
               }),
             ],
           }),

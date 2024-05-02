@@ -27,9 +27,15 @@ interface Props {
     description?: string;
     required?: string[] | boolean;
   };
+  depthTillCollapsed: number;
 }
 
-export function createResponseSchema({ title, body, ...rest }: Props) {
+export function createResponseSchema({
+  title,
+  body,
+  depthTillCollapsed,
+  ...rest
+}: Props) {
   if (
     body === undefined ||
     body.content === undefined ||
@@ -79,6 +85,7 @@ export function createResponseSchema({ title, body, ...rest }: Props) {
                   create("TabItem", {
                     label: `${title}`,
                     value: `${title}`,
+                    "data-depthTillCollapsed": depthTillCollapsed,
                     children: [
                       createDetails({
                         className: "openapi-markdown__details response",
@@ -118,7 +125,11 @@ export function createResponseSchema({ title, body, ...rest }: Props) {
                           }),
                           create("ul", {
                             style: { marginLeft: "1rem" },
-                            children: createNodes(firstBody!, "response"),
+                            children: createNodes(
+                              firstBody!,
+                              "response",
+                              depthTillCollapsed - 1
+                            ),
                           }),
                         ],
                       }),

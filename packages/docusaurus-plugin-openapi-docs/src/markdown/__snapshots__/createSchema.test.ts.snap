@@ -3,13 +3,18 @@
 exports[`createNodes should create readable MODs for oneOf primitive properties 1`] = `
 Array [
   "<SchemaItem collapsible={true} className={\\"schemaItem\\"}>
-  <details style={{}} className={\\"openapi-markdown__details\\"}>
+  <details
+    style={{}}
+    className={\\"openapi-markdown__details\\"}
+    open={true}
+    data-depthTillCollapsed={1}
+  >
     <summary style={{}}>
       <strong>oneOfProperty</strong>
       <span style={{ opacity: \\"0.6\\" }}>object</span>
     </summary>
     <div style={{ marginLeft: \\"1rem\\" }}></div>
-    <div>
+    <div data-depthTillCollapsed={0}>
       <span className={\\"badge badge--info\\"}>oneOf</span>
       <SchemaTabs>
         <TabItem label={\\"MOD1\\"} value={\\"0-item-properties\\"}>

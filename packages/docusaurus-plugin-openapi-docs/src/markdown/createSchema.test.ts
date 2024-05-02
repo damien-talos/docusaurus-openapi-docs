@@ -49,7 +49,7 @@ describe("createNodes", () => {
     };
     expect(
       await Promise.all(
-        createNodes(schema, "request").map(
+        createNodes(schema, "request", 1).map(
           async (md: any) => await prettier.format(md, { parser: "babel" })
         )
       )

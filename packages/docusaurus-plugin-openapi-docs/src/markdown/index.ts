@@ -47,7 +47,10 @@ interface RequestBodyProps {
     description?: string;
     required?: boolean;
   };
+  depthTillCollapsed: number;
 }
+
+const depthTillCollapsed = 5;
 
 export function createApiPageMD({
   title,
@@ -96,9 +99,13 @@ export function createApiPageMD({
     createRequestBodyDetails({
       title: "Body",
       body: requestBody,
+      depthTillCollapsed: depthTillCollapsed,
     } as RequestBodyProps),
-    createStatusCodes({ responses }),
-    createCallbacks({ callbacks }),
+    createStatusCodes({
+      responses,
+      depthTillCollapsed: depthTillCollapsed,
+    }),
+    createCallbacks({ callbacks, depthTillCollapsed: depthTillCollapsed }),
   ]);
 }
 
@@ -150,7 +157,7 @@ export function createSchemaPageMD({ schema }: SchemaPageMetadata) {
     createHeading(title.replace(lessThan, "&lt;").replace(greaterThan, "&gt;")),
     createDescription(description),
     create("ul", {
-      children: createNodes(schema, "response"),
+      children: createNodes(schema, "response", depthTillCollapsed),
     }),
   ]);
 }
