@@ -58,9 +58,10 @@ export function mergeAllOf(allOf: SchemaObject[]) {
 /**
  * For handling nested anyOf/oneOf.
  */
-function createAnyOneOf(schema: SchemaObject): any {
+function createAnyOneOf(schema: SchemaObject, depthTillCollapsed: number): any {
   const type = schema.oneOf ? "oneOf" : "anyOf";
   return create("div", {
+    "data-depthTillCollapsed": depthTillCollapsed,
     children: [
       create("span", {
         className: "badge badge--info",
@@ -74,17 +75,23 @@ function createAnyOneOf(schema: SchemaObject): any {
           const anyOneChildren = [];
 
           if (anyOneSchema.properties !== undefined) {
-            anyOneChildren.push(createProperties(anyOneSchema));
+            anyOneChildren.push(
+              createProperties(anyOneSchema, depthTillCollapsed - 1)
+            );
             delete anyOneSchema.properties;
           }
 
           if (anyOneSchema.allOf !== undefined) {
-            anyOneChildren.push(createNodes(anyOneSchema, SCHEMA_TYPE));
+            anyOneChildren.push(
+              createNodes(anyOneSchema, SCHEMA_TYPE, depthTillCollapsed - 1)
+            );
             delete anyOneSchema.allOf;
           }
 
           if (anyOneSchema.items !== undefined) {
-            anyOneChildren.push(createItems(anyOneSchema));
+            anyOneChildren.push(
+              createItems(anyOneSchema, depthTillCollapsed - 1)
+            );
             delete anyOneSchema.items;
           }
 
@@ -94,7 +101,9 @@ function createAnyOneOf(schema: SchemaObject): any {
             anyOneSchema.type === "integer" ||
             anyOneSchema.type === "boolean"
           ) {
-            anyOneChildren.push(createNodes(anyOneSchema, SCHEMA_TYPE));
+            anyOneChildren.push(
+              createNodes(anyOneSchema, SCHEMA_TYPE, depthTillCollapsed - 1)
+            );
           }
           if (anyOneChildren.length) {
             if (schema.type === "array") {
@@ -127,7 +136,7 @@ function createAnyOneOf(schema: SchemaObject): any {
 /**
  * For handling properties.
  */
-function createProperties(schema: SchemaObject) {
+function createProperties(schema: SchemaObject, depthTillCollapsed: number) {
   const discriminator = schema.discriminator;
   return Object.entries(schema.properties!).map(([key, val]) => {
     return createEdges({
@@ -137,6 +146,7 @@ function createProperties(schema: SchemaObject) {
         ? schema.required.includes(key)
         : false,
       discriminator,
+      depthTillCollapsed,
     });
   });
 }
@@ -144,7 +154,10 @@ function createProperties(schema: SchemaObject) {
 /**
  * For handling additionalProperties.
  */
-function createAdditionalProperties(schema: SchemaObject) {
+function createAdditionalProperties(
+  schema: SchemaObject,
+  depthTillCollapsed: number
+) {
   const additionalProperties = schema.additionalProperties;
   const type: string | unknown = additionalProperties?.type;
   // Handle free-form objects
@@ -176,7 +189,8 @@ function createAdditionalProperties(schema: SchemaObject) {
       title ?? schemaName,
       additionalProperties,
       required,
-      schema.nullable
+      schema.nullable,
+      depthTillCollapsed
     );
   }
 
@@ -224,6 +238,7 @@ function createAdditionalProperties(schema: SchemaObject) {
       required: Array.isArray(schema.required)
         ? schema.required.includes(key)
         : false,
+      depthTillCollapsed: depthTillCollapsed,
     })
   );
 }
@@ -231,11 +246,11 @@ function createAdditionalProperties(schema: SchemaObject) {
 /**
  * For handling items.
  */
-function createItems(schema: SchemaObject) {
+function createItems(schema: SchemaObject, depthTillCollapsed: number) {
   if (schema.items?.properties !== undefined) {
     return [
       createOpeningArrayBracket(),
-      createProperties(schema.items),
+      createProperties(schema.items, depthTillCollapsed),
       createClosingArrayBracket(),
     ].flat();
   }
@@ -243,7 +258,7 @@ function createItems(schema: SchemaObject) {
   if (schema.items?.additionalProperties !== undefined) {
     return [
       createOpeningArrayBracket(),
-      createAdditionalProperties(schema.items),
+      createAdditionalProperties(schema.items, depthTillCollapsed),
       createClosingArrayBracket(),
     ].flat();
   }
@@ -251,7 +266,7 @@ function createItems(schema: SchemaObject) {
   if (schema.items?.oneOf !== undefined || schema.items?.anyOf !== undefined) {
     return [
       createOpeningArrayBracket(),
-      createAnyOneOf(schema.items!),
+      createAnyOneOf(schema.items!, depthTillCollapsed),
       createClosingArrayBracket(),
     ].flat();
   }
@@ -271,8 +286,8 @@ function createItems(schema: SchemaObject) {
     ) {
       return [
         createOpeningArrayBracket(),
-        createAnyOneOf(mergedSchemas),
-        createProperties(mergedSchemas),
+        createAnyOneOf(mergedSchemas, depthTillCollapsed),
+        createProperties(mergedSchemas, depthTillCollapsed),
         createClosingArrayBracket(),
       ].flat();
     }
@@ -284,7 +299,7 @@ function createItems(schema: SchemaObject) {
     ) {
       return [
         createOpeningArrayBracket(),
-        createAnyOneOf(mergedSchemas),
+        createAnyOneOf(mergedSchemas, depthTillCollapsed),
         createClosingArrayBracket(),
       ].flat();
     }
@@ -293,7 +308,7 @@ function createItems(schema: SchemaObject) {
     if (mergedSchemas.properties !== undefined) {
       return [
         createOpeningArrayBracket(),
-        createProperties(mergedSchemas),
+        createProperties(mergedSchemas, depthTillCollapsed),
         createClosingArrayBracket(),
       ].flat();
     }
@@ -308,7 +323,7 @@ function createItems(schema: SchemaObject) {
   ) {
     return [
       createOpeningArrayBracket(),
-      createNodes(schema.items, SCHEMA_TYPE),
+      createNodes(schema.items, SCHEMA_TYPE, depthTillCollapsed),
       createClosingArrayBracket(),
     ].flat();
   }
@@ -323,6 +338,7 @@ function createItems(schema: SchemaObject) {
         required: Array.isArray(schema.required)
           ? schema.required.includes(key)
           : false,
+        depthTillCollapsed: depthTillCollapsed,
       })
     ),
     createClosingArrayBracket(),
@@ -337,7 +353,8 @@ function createDetailsNode(
   schemaName: string,
   schema: SchemaObject,
   required: string[] | boolean,
-  nullable: boolean | unknown
+  nullable: boolean | unknown,
+  depthTillCollapsed: number
 ): any {
   return create("SchemaItem", {
     collapsible: true,
@@ -345,6 +362,8 @@ function createDetailsNode(
     children: [
       createDetails({
         className: "openapi-markdown__details",
+        open: depthTillCollapsed > 0,
+        "data-depthTillCollapsed": depthTillCollapsed,
         children: [
           createDetailsSummary({
             children: [
@@ -415,7 +434,7 @@ function createDetailsNode(
                   children: createDescription(description),
                 })
               ),
-              createNodes(schema, SCHEMA_TYPE),
+              createNodes(schema, SCHEMA_TYPE, depthTillCollapsed - 1),
             ],
           }),
         ],
@@ -432,7 +451,8 @@ function createAnyOneOfProperty(
   schemaName: string,
   schema: SchemaObject,
   required: string[] | boolean,
-  nullable: boolean | unknown
+  nullable: boolean | unknown,
+  depthTillCollapsed: number
 ): any {
   return create("SchemaItem", {
     collapsible: true,
@@ -440,6 +460,8 @@ function createAnyOneOfProperty(
     children: [
       createDetails({
         className: "openapi-markdown__details",
+        open: depthTillCollapsed > 0,
+        "data-depthTillCollapsed": depthTillCollapsed,
         children: [
           createDetailsSummary({
             children: [
@@ -494,7 +516,7 @@ function createAnyOneOfProperty(
               ),
             ],
           }),
-          createAnyOneOf(schema),
+          createAnyOneOf(schema, depthTillCollapsed - 1),
         ],
       }),
     ],
@@ -510,7 +532,8 @@ function createPropertyDiscriminator(
   schemaName: string,
   schema: SchemaObject,
   discriminator: any,
-  required: string[] | boolean
+  required: string[] | boolean,
+  depthTillCollapsed: number
 ): any {
   if (schema === undefined) {
     return undefined;
@@ -522,6 +545,7 @@ function createPropertyDiscriminator(
 
   return create("div", {
     className: "openapi-discriminator__item openapi-schema__list-item",
+    "data-depthTillCollapsed": depthTillCollapsed,
     children: create("div", {
       children: [
         create("span", {
@@ -569,7 +593,14 @@ function createPropertyDiscriminator(
               // className: "openapi-tabs__discriminator-item",
               label: label,
               value: `${index}-item-discriminator`,
-              children: [createNodes(discriminator?.mapping[key], SCHEMA_TYPE)],
+              "data-depthTillCollapsed": depthTillCollapsed,
+              children: [
+                createNodes(
+                  discriminator?.mapping[key],
+                  SCHEMA_TYPE,
+                  depthTillCollapsed - 1
+                ),
+              ],
             });
           }),
         }),
@@ -583,6 +614,7 @@ interface EdgeProps {
   schema: SchemaObject;
   required: string[] | boolean;
   discriminator?: any | unknown;
+  depthTillCollapsed: number;
 }
 
 /**
@@ -593,6 +625,7 @@ function createEdges({
   schema,
   required,
   discriminator,
+  depthTillCollapsed = 0,
 }: EdgeProps): any {
   const schemaName = getSchemaName(schema);
   if (discriminator !== undefined && discriminator.propertyName === name) {
@@ -601,7 +634,8 @@ function createEdges({
       "string",
       schema,
       discriminator,
-      required
+      required,
+      depthTillCollapsed
     );
   }
 
@@ -611,7 +645,8 @@ function createEdges({
       schemaName,
       schema,
       required,
-      schema.nullable
+      schema.nullable,
+      depthTillCollapsed
     );
   }
 
@@ -629,7 +664,8 @@ function createEdges({
         mergedSchemaName,
         mergedSchemas,
         required,
-        schema.nullable
+        schema.nullable,
+        depthTillCollapsed
       );
     }
 
@@ -639,7 +675,8 @@ function createEdges({
         mergedSchemaName,
         mergedSchemas,
         required,
-        schema.nullable
+        schema.nullable,
+        depthTillCollapsed
       );
     }
 
@@ -649,7 +686,8 @@ function createEdges({
         mergedSchemaName,
         mergedSchemas,
         required,
-        schema.nullable
+        schema.nullable,
+        depthTillCollapsed
       );
     }
 
@@ -660,7 +698,8 @@ function createEdges({
         mergedSchemaName,
         mergedSchemas,
         required,
-        schema.nullable
+        schema.nullable,
+        depthTillCollapsed
       );
     }
 
@@ -692,7 +731,8 @@ function createEdges({
       schemaName,
       schema,
       required,
-      schema.nullable
+      schema.nullable,
+      depthTillCollapsed
     );
   }
 
@@ -702,7 +742,8 @@ function createEdges({
       schemaName,
       schema,
       required,
-      schema.nullable
+      schema.nullable,
+      depthTillCollapsed
     );
   }
 
@@ -713,7 +754,8 @@ function createEdges({
       schemaName,
       schema,
       required,
-      schema.nullable
+      schema.nullable,
+      depthTillCollapsed
     );
   }
 
@@ -723,7 +765,8 @@ function createEdges({
       schemaName,
       schema,
       required,
-      schema.nullable
+      schema.nullable,
+      depthTillCollapsed
     );
   }
 
@@ -755,7 +798,8 @@ function createEdges({
  */
 export function createNodes(
   schema: SchemaObject,
-  schemaType: "request" | "response"
+  schemaType: "request" | "response",
+  depthTillCollapsed: number
 ): any {
   SCHEMA_TYPE = schemaType;
   const nodes = [];
@@ -764,7 +808,7 @@ export function createNodes(
   // }
 
   if (schema.oneOf !== undefined || schema.anyOf !== undefined) {
-    nodes.push(createAnyOneOf(schema));
+    nodes.push(createAnyOneOf(schema, depthTillCollapsed));
   }
 
   if (schema.allOf !== undefined) {
@@ -772,21 +816,21 @@ export function createNodes(
 
     // allOf seems to always result in properties
     if (mergedSchemas.properties !== undefined) {
-      nodes.push(createProperties(mergedSchemas));
+      nodes.push(createProperties(mergedSchemas, depthTillCollapsed));
     }
   }
 
   if (schema.properties !== undefined) {
-    nodes.push(createProperties(schema));
+    nodes.push(createProperties(schema, depthTillCollapsed));
   }
 
   if (schema.additionalProperties !== undefined) {
-    nodes.push(createAdditionalProperties(schema));
+    nodes.push(createAdditionalProperties(schema, depthTillCollapsed));
   }
 
   // TODO: figure out how to handle array of objects
   if (schema.items !== undefined) {
-    nodes.push(createItems(schema));
+    nodes.push(createItems(schema, depthTillCollapsed));
   }
 
   if (nodes.length && nodes.length > 0) {

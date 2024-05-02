@@ -15,6 +15,7 @@ import { ApiItem } from "../types";
 
 interface Props {
   callbacks: ApiItem["callbacks"];
+  depthTillCollapsed: number;
 }
 
 interface RequestBodyProps {
@@ -26,9 +27,10 @@ interface RequestBodyProps {
     description?: string;
     required?: boolean;
   };
+  depthTillCollapsed: number;
 }
 
-export function createCallbacks({ callbacks }: Props) {
+export function createCallbacks({ callbacks, depthTillCollapsed }: Props) {
   if (callbacks === undefined) {
     return undefined;
   }
@@ -71,6 +73,7 @@ export function createCallbacks({ callbacks }: Props) {
               create("TabItem", {
                 label: `${method.toUpperCase()} ${name}`,
                 value: `${method}-${name}`,
+                "data-depthTillCollapsed": depthTillCollapsed,
                 children: [
                   createMethodEndpoint(method, path),
                   // TODO: add `deprecation notice` when markdown support is added
@@ -83,6 +86,7 @@ export function createCallbacks({ callbacks }: Props) {
                     id: "callbacks-responses",
                     label: "Callbacks Responses",
                     responses,
+                    depthTillCollapsed: depthTillCollapsed - 1,
                   }),
                 ],
               }),

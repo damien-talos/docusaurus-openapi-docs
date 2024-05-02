@@ -17,8 +17,13 @@ interface Props {
     description?: string;
     required?: boolean;
   };
+  depthTillCollapsed: number;
 }
 
-export function createRequestBodyDetails({ title, body }: Props) {
-  return createRequestSchema({ title, body });
+export function createRequestBodyDetails({
+  title,
+  body,
+  depthTillCollapsed,
+}: Props) {
+  return createRequestSchema({ title, body, depthTillCollapsed });
 }

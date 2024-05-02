@@ -57,6 +57,7 @@ interface Props {
   id?: string;
   label?: string;
   responses: ApiItem["responses"];
+  depthTillCollapsed: number;
 }
 
 function createResponseHeaders(responseHeaders: any) {
@@ -256,7 +257,12 @@ export function createExampleFromSchema(schema: any, mimeType: string) {
   return undefined;
 }
 
-export function createStatusCodes({ label, id, responses }: Props) {
+export function createStatusCodes({
+  label,
+  id,
+  responses,
+  depthTillCollapsed,
+}: Props) {
   if (responses === undefined) {
     return undefined;
   }
@@ -305,6 +311,7 @@ export function createStatusCodes({ label, id, responses }: Props) {
                       body: {
                         content: responses[code].content,
                       },
+                      depthTillCollapsed: depthTillCollapsed,
                     }),
                   }),
                 ],
